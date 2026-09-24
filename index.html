@@ -5,18 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fortnite Web Clone</title>
     <style>
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
-            background-color: #000;
+            background-color: #60adff;
         }
 
-        #game-canvas {
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
-            display: block;
+            z-index: 1;
         }
 
         #crosshair {
@@ -32,7 +36,7 @@
         #crosshair::before, #crosshair::after {
             content: '';
             position: absolute;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
         }
         #crosshair::before { top: 4px; left: -8px; width: 26px; height: 2px; }
         #crosshair::after { top: -8px; left: 4px; width: 2px; height: 26px; }
@@ -52,10 +56,10 @@
         }
 
         .hud-panel {
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             padding: 12px 20px;
             border-radius: 8px;
-            border: 2px solid #333;
+            border: 2px solid #444;
         }
 
         #build-menu {
@@ -85,7 +89,7 @@
 
         .build-slot.active {
             border-color: #ffcc00;
-            background: rgba(255, 204, 0, 0.2);
+            background: rgba(255, 204, 0, 0.25);
         }
 
         .keybind {
@@ -130,11 +134,11 @@
     
     <div id="instructions">
         <h1>FORTNITE WEB EDITION</h1>
-        <p><b>Click anywhere to Start</b></p>
+        <p style="color: #ffcc00; font-size: 18px;"><b>CLICK HERE TO START</b></p>
         <p><b>WASD</b> - Move | <b>SPACE</b> - Jump / Jump from Bus</p>
         <p><b>Z</b> - Wall | <b>X</b> - Floor | <b>C</b> - Ramp | <b>V</b> - Roof</p>
         <p><b>G / Right Click</b> - Switch Material (Wood / Brick / Metal)</p>
-        <p><b>Left Click</b> - Place Build / Attack</p>
+        <p><b>Left Click</b> - Place Build</p>
     </div>
 
     <div id="material-indicator">Material: WOOD</div>
@@ -171,96 +175,79 @@
     </div>
 
     <script>
-        // --- Game Constants & Configuration ---
         const GRID_SIZE = 4;
         const MAP_SIZE = 400;
         const MATERIALS = {
-            WOOD: { name: 'WOOD', color: 0x8B5A2B, opacity: 0.85, roughness: 0.8 },
-            BRICK: { name: 'BRICK', color: 0x8B3A3A, opacity: 0.90, roughness: 0.9 },
-            METAL: { name: 'METAL', color: 0x708090, opacity: 0.95, roughness: 0.3 }
+            WOOD: { name: 'WOOD', color: 0x8B5A2B },
+            BRICK: { name: 'BRICK', color: 0x8B3A3A },
+            METAL: { name: 'METAL', color: 0x708090 }
         };
 
         let currentMaterial = 'WOOD';
         let currentBuildType = 'WALL';
 
-        // --- Three.js Setup ---
+        // Scene Setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x60adff);
-        scene.fog = new THREE.FogExp2(0x60adff, 0.005);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        // --- Lights ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.6);
         sunLight.position.set(100, 200, 50);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        sunLight.shadow.camera.near = 0.5;
-        sunLight.shadow.camera.far = 500;
-        const d = 150;
-        sunLight.shadow.camera.left = -d;
-        sunLight.shadow.camera.right = d;
-        sunLight.shadow.camera.top = d;
-        sunLight.shadow.camera.bottom = -d;
         scene.add(sunLight);
 
-        // --- Terrain ---
+        // Ground
         const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x4e8d2b, roughness: 0.9 });
+        const groundMat = new THREE.MeshLambertMaterial({ color: 0x4e8d2b });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
         scene.add(ground);
 
-        // --- Trees ---
+        // Trees
         function createTree(x, z) {
             const treeGroup = new THREE.Group();
             
-            const trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 8);
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
+            const trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 6);
+            const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5c4033 });
             const trunk = new THREE.Mesh(trunkGeo, trunkMat);
             trunk.position.y = 2;
-            trunk.castShadow = true;
             treeGroup.add(trunk);
 
-            const leavesGeo = new THREE.ConeGeometry(2.5, 6, 8);
-            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.6 });
+            const leavesGeo = new THREE.ConeGeometry(2.5, 6, 6);
+            const leavesMat = new THREE.MeshLambertMaterial({ color: 0x2e8b57 });
             const leaves = new THREE.Mesh(leavesGeo, leavesMat);
             leaves.position.y = 5;
-            leaves.castShadow = true;
             treeGroup.add(leaves);
 
             treeGroup.position.set(x, 0, z);
             scene.add(treeGroup);
         }
 
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 70; i++) {
             let x = (Math.random() - 0.5) * (MAP_SIZE - 40);
             let z = (Math.random() - 0.5) * (MAP_SIZE - 40);
             createTree(x, z);
         }
 
-        // --- Battle Bus ---
+        // Battle Bus
         const busGroup = new THREE.Group();
         const busBody = new THREE.Mesh(
             new THREE.BoxGeometry(4, 3, 8),
-            new THREE.MeshStandardMaterial({ color: 0x2266cc })
+            new THREE.MeshLambertMaterial({ color: 0x2266cc })
         );
         busBody.position.y = 1.5;
         busGroup.add(busBody);
 
         const balloon = new THREE.Mesh(
-            new THREE.SphereGeometry(3, 16, 16),
-            new THREE.MeshStandardMaterial({ color: 0xff3333 })
+            new THREE.SphereGeometry(3, 12, 12),
+            new THREE.MeshLambertMaterial({ color: 0xff3333 })
         );
         balloon.position.y = 6;
         busGroup.add(balloon);
@@ -269,7 +256,7 @@
         busGroup.position.set(-180, 80, -180);
         scene.add(busGroup);
 
-        // --- Player ---
+        // Player Controls
         let inBus = true;
         let isGrounded = false;
         let velocity = new THREE.Vector3();
@@ -328,12 +315,13 @@
             }
         });
 
+        document.getElementById('instructions').addEventListener('click', () => {
+            document.body.requestPointerLock();
+            document.getElementById('instructions').style.display = 'none';
+        });
+
         document.addEventListener('mousedown', (e) => {
-            if (document.pointerLockElement !== document.body) {
-                document.body.requestPointerLock();
-                document.getElementById('instructions').style.display = 'none';
-                return;
-            }
+            if (document.pointerLockElement !== document.body) return;
 
             if (e.button === 0) {
                 placeBuilding();
@@ -344,7 +332,7 @@
 
         document.addEventListener('contextmenu', e => e.preventDefault());
 
-        // --- Building Mechanics ---
+        // Building Preview & System
         function createBuildGeometry(type) {
             if (type === 'WALL') return new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, 0.2);
             if (type === 'FLOOR') return new THREE.BoxGeometry(GRID_SIZE, 0.2, GRID_SIZE);
@@ -356,7 +344,8 @@
         const previewMat = new THREE.MeshBasicMaterial({
             color: 0x00aaff,
             transparent: true,
-            opacity: 0.4
+            opacity: 0.5,
+            wireframe: true
         });
 
         const previewMesh = new THREE.Mesh(createBuildGeometry('WALL'), previewMat);
@@ -409,34 +398,23 @@
             const snap = getSnapPosition();
             const matProps = MATERIALS[currentMaterial];
 
-            const mat = new THREE.MeshStandardMaterial({
-                color: matProps.color,
-                roughness: matProps.roughness,
-                transparent: true,
-                opacity: matProps.opacity
-            });
-
+            const mat = new THREE.MeshLambertMaterial({ color: matProps.color });
             const mesh = new THREE.Mesh(previewMesh.geometry.clone(), mat);
             mesh.position.copy(snap.pos);
             mesh.rotation.copy(previewMesh.rotation);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
 
             scene.add(mesh);
         }
 
-        // --- Bots ---
+        // Bots
         const bots = [];
         function spawnBot(x, z) {
             const botGroup = new THREE.Group();
-            
-            // Fixed Cylinder geometry for bots to prevent errors
             const body = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.6, 0.6, 1.8, 16),
-                new THREE.MeshStandardMaterial({ color: 0xff4444 })
+                new THREE.BoxGeometry(1, 2, 1),
+                new THREE.MeshLambertMaterial({ color: 0xff4444 })
             );
-            body.position.y = 0.9;
-            body.castShadow = true;
+            body.position.y = 1;
             botGroup.add(body);
 
             botGroup.position.set(x, 0, z);
@@ -456,7 +434,7 @@
         function updateBots(delta) {
             bots.forEach(bot => {
                 bot.userData.timer += delta;
-                if (bot.userData.timer > 5) {
+                if (bot.userData.timer > 4) {
                     bot.userData.target.set(
                         bot.position.x + (Math.random() - 0.5) * 40,
                         0,
@@ -475,7 +453,7 @@
             });
         }
 
-        // --- Game Loop ---
+        // Main Loop
         const clock = new THREE.Clock();
 
         function animate() {
@@ -483,8 +461,8 @@
             const delta = clock.getDelta();
 
             if (busActive) {
-                busGroup.position.x += 25 * delta;
-                busGroup.position.z += 25 * delta;
+                busGroup.position.x += 20 * delta;
+                busGroup.position.z += 20 * delta;
                 if (inBus) {
                     player.position.copy(busGroup.position);
                 }
@@ -493,7 +471,7 @@
 
             if (!inBus) {
                 if (player.position.y > 0) {
-                    velocity.y -= (player.position.y > 20 ? 15 : 30) * delta;
+                    velocity.y -= (player.position.y > 20 ? 15 : 35) * delta;
                 }
 
                 player.position.y += velocity.y * delta;
