@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fortnite Web Clone</title>
+    <title>Fortnite Web Clone - Deluxe Edition</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -12,15 +12,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
             background-color: #60adff;
-        }
-
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
         }
 
         #crosshair {
@@ -56,10 +47,24 @@
         }
 
         .hud-panel {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.65);
             padding: 12px 20px;
             border-radius: 8px;
             border: 2px solid #444;
+        }
+
+        #mode-indicator {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            color: #00ffff;
+            font-size: 20px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: 2px solid #00ffff;
+            z-index: 10;
         }
 
         #build-menu {
@@ -89,7 +94,7 @@
 
         .build-slot.active {
             border-color: #ffcc00;
-            background: rgba(255, 204, 0, 0.25);
+            background: rgba(255, 204, 0, 0.3);
         }
 
         .keybind {
@@ -105,25 +110,69 @@
             transform: translate(-50%, -50%);
             color: white;
             text-align: center;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             padding: 30px;
             border-radius: 12px;
-            border: 2px solid #555;
+            border: 2px solid #ffcc00;
             cursor: pointer;
             z-index: 100;
+            max-width: 500px;
         }
 
-        #material-indicator {
+        #interact-prompt {
             position: absolute;
-            bottom: 100px;
-            right: 20px;
-            color: white;
-            font-size: 18px;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffcc00;
+            font-size: 22px;
             font-weight: bold;
-            background: rgba(0,0,0,0.6);
-            padding: 8px 16px;
-            border-radius: 6px;
+            text-shadow: 2px 2px 4px black;
+            display: none;
             z-index: 10;
+        }
+
+        /* Cheat Menu Styling */
+        #cheat-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 0, 40, 0.95);
+            border: 3px solid #bf00ff;
+            box-shadow: 0 0 20px #bf00ff;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 200;
+            width: 320px;
+            text-align: center;
+        }
+
+        #cheat-menu h2 {
+            margin: 0;
+            color: #e066ff;
+            font-size: 24px;
+            text-shadow: 0 0 8px #bf00ff;
+        }
+
+        .cheat-btn {
+            background: #330066;
+            color: white;
+            border: 2px solid #bf00ff;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .cheat-btn:hover {
+            background: #bf00ff;
+            color: black;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -131,60 +180,75 @@
 <body>
 
     <div id="crosshair"></div>
-    
+    <div id="interact-prompt">[E] OPEN CHEST</div>
+
     <div id="instructions">
-        <h1>FORTNITE WEB EDITION</h1>
-        <p style="color: #ffcc00; font-size: 18px;"><b>CLICK HERE TO START</b></p>
-        <p><b>WASD</b> - Move | <b>SPACE</b> - Jump / Jump from Bus</p>
-        <p><b>Z</b> - Wall | <b>X</b> - Floor | <b>C</b> - Ramp | <b>V</b> - Roof</p>
-        <p><b>G / Right Click</b> - Switch Material (Wood / Brick / Metal)</p>
-        <p><b>Left Click</b> - Place Build</p>
+        <h1 style="color:#ffcc00; margin-top:0;">FORTNITE WEB DELUXE</h1>
+        <p style="color: #00ffff; font-size: 18px;"><b>CLICK HERE TO START</b></p>
+        <p><b>1</b> - Equip Laser Gun | <b>2-5 or Z/X/C/V</b> - Build Mode</p>
+
+        <p><b>WASD</b> - Move | <b>SPACE</b> - Jump / Drop from Bus</p>
+        <p><b>G / Right Click</b> - Switch Material | <b>E</b> - Open Chests</p>
+        <p style="color: #bf00ff;"><b>[ALT + 7]</b> - Open Secret Cheat Menu</p>
     </div>
 
-    <div id="material-indicator">Material: WOOD</div>
+    <div id="mode-indicator">WEAPON: LASER GUN</div>
 
     <div id="build-menu">
-        <div class="build-slot active" id="slot-wall">
+        <div class="build-slot" id="slot-wall">
             <span>WALL</span>
-            <span class="keybind">[Z]</span>
+            <span class="keybind">[Z / 2]</span>
         </div>
         <div class="build-slot" id="slot-floor">
             <span>FLOOR</span>
-            <span class="keybind">[X]</span>
+            <span class="keybind">[X / 3]</span>
         </div>
         <div class="build-slot" id="slot-ramp">
             <span>RAMP</span>
-            <span class="keybind">[C]</span>
+            <span class="keybind">[C / 4]</span>
         </div>
         <div class="build-slot" id="slot-roof">
             <span>ROOF</span>
-            <span class="keybind">[V]</span>
+            <span class="keybind">[V / 5]</span>
         </div>
     </div>
 
     <div id="hud">
         <div class="hud-panel">
-            <div>WOOD: <span id="mat-wood">999</span></div>
-            <div>BRICK: <span id="mat-brick">999</span></div>
-            <div>METAL: <span id="mat-metal">999</span></div>
+            <div>WOOD: <span id="mat-wood">500</span></div>
+            <div>BRICK: <span id="mat-brick">300</span></div>
+            <div>METAL: <span id="mat-metal">100</span></div>
         </div>
         <div class="hud-panel">
-            <div>HEALTH: <span id="hp">100</span></div>
-            <div>SHIELD: <span id="shield">100</span></div>
+            <div style="color:#ff4444;">HEALTH: <span id="hp">100</span></div>
+            <div style="color:#00aaff;">SHIELD: <span id="shield">50</span></div>
         </div>
+    </div>
+
+    <!-- Secret Cheat Menu -->
+    <div id="cheat-menu">
+        <h2>⚡ CHEAT MENU ⚡</h2>
+        <button class="cheat-btn" onclick="cheatInfiniteMats()">+1,000,000 MATERIALS</button>
+        <button class="cheat-btn" id="superjump-btn" onclick="cheatToggleSuperJump()">SUPER JUMP: OFF</button>
+        <button class="cheat-btn" onclick="cheatGodMode()">MAX HEALTH & SHIELD</button>
+        <button class="cheat-btn" style="border-color:#ff4444; margin-top:10px;" onclick="toggleCheatMenu()">CLOSE MENU</button>
     </div>
 
     <script>
         const GRID_SIZE = 4;
-        const MAP_SIZE = 400;
+        const MAP_SIZE = 500;
+        let materialsCount = { WOOD: 500, BRICK: 300, METAL: 100 };
         const MATERIALS = {
-            WOOD: { name: 'WOOD', color: 0x8B5A2B },
-            BRICK: { name: 'BRICK', color: 0x8B3A3A },
-            METAL: { name: 'METAL', color: 0x708090 }
+            WOOD: { color: 0x8B5A2B },
+            BRICK: { color: 0x8B3A3A },
+            METAL: { color: 0x708090 }
         };
 
         let currentMaterial = 'WOOD';
+        let currentMode = 'WEAPON'; // WEAPON or BUILD
         let currentBuildType = 'WALL';
+        let superJumpEnabled = false;
+        let playerHP = 100, playerShield = 50;
 
         // Scene Setup
         const scene = new THREE.Scene();
@@ -195,11 +259,11 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.5);
         sunLight.position.set(100, 200, 50);
         scene.add(sunLight);
 
@@ -210,61 +274,145 @@
         ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
 
-        // Trees
+        // Colliders Array for Solid Physics
+        const colliders = [];
+
+        // Laser Gun Visual Mesh in Hand
+        const laserGun = new THREE.Group();
+        const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.8), new THREE.MeshLambertMaterial({ color: 0x222222 }));
+        const gunBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6), new THREE.MeshLambertMaterial({ color: 0x00ffff }));
+        gunBarrel.rotation.x = Math.PI / 2;
+        gunBarrel.position.set(0, 0.05, -0.4);
+        laserGun.add(gunBody, gunBarrel);
+        laserGun.position.set(0.4, -0.3, -0.6);
+        camera.add(laserGun);
+
+        // World Objects: Trees, Houses, Treehouses, Chests
+        const chests = [];
+
+        function createChest(x, y, z) {
+            const chestGroup = new THREE.Group();
+            const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.8), new THREE.MeshLambertMaterial({ color: 0xffaa00 }));
+            box.position.y = 0.4;
+            const lock = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+            lock.position.set(0, 0.4, 0.42);
+            chestGroup.add(box, lock);
+            chestGroup.position.set(x, y, z);
+            chestGroup.userData = { opened: false };
+            scene.add(chestGroup);
+            chests.push(chestGroup);
+        }
+
+        function createHouse(x, z) {
+            const houseGroup = new THREE.Group();
+            
+            // Floor
+            const floor = new THREE.Mesh(new THREE.BoxGeometry(12, 0.2, 12), new THREE.MeshLambertMaterial({ color: 0x664422 }));
+            floor.position.y = 0.1;
+            houseGroup.add(floor);
+
+            // Walls
+            const wallMat = new THREE.MeshLambertMaterial({ color: 0xa88358 });
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(12, 5, 0.4), wallMat);
+            backWall.position.set(0, 2.5, -6);
+            
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5, 12), wallMat);
+            leftWall.position.set(-6, 2.5, 0);
+
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5, 12), wallMat);
+            rightWall.position.set(6, 2.5, 0);
+
+            houseGroup.add(backWall, leftWall, rightWall);
+
+            // Roof
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(9.5, 4, 4), new THREE.MeshLambertMaterial({ color: 0x882222 }));
+            roof.position.y = 7;
+            roof.rotation.y = Math.PI / 4;
+            houseGroup.add(roof);
+
+            houseGroup.position.set(x, 0, z);
+            scene.add(houseGroup);
+
+            // Add wall bounding boxes for solid collisions
+            colliders.push(new THREE.Box3().setFromObject(backWall));
+            colliders.push(new THREE.Box3().setFromObject(leftWall));
+            colliders.push(new THREE.Box3().setFromObject(rightWall));
+
+            // Place Chest inside
+            createChest(x, 0.2, z - 3);
+        }
+
+        function createTreehouse(x, z) {
+            // Giant Trunk
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2, 12, 8), new THREE.MeshLambertMaterial({ color: 0x4a2e18 }));
+            trunk.position.set(x, 6, z);
+            scene.add(trunk);
+
+            // Platform
+            const platform = new THREE.Mesh(new THREE.BoxGeometry(8, 0.4, 8), new THREE.MeshLambertMaterial({ color: 0x8b5a2b }));
+            platform.position.set(x, 10, z);
+            scene.add(platform);
+            colliders.push(new THREE.Box3().setFromObject(platform));
+
+            // Foliage
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(7, 8, 8), new THREE.MeshLambertMaterial({ color: 0x1e6b37 }));
+            leaves.position.set(x, 15, z);
+            scene.add(leaves);
+
+            // Ramp up
+            const ramp = new THREE.Mesh(new THREE.BoxGeometry(2, 0.2, 14), new THREE.MeshLambertMaterial({ color: 0x8b5a2b }));
+            ramp.position.set(x, 5, z + 5);
+            ramp.rotation.x = Math.PI / 6;
+            scene.add(ramp);
+            colliders.push(new THREE.Box3().setFromObject(ramp));
+
+            // Chest on platform
+            createChest(x, 10.2, z);
+        }
+
         function createTree(x, z) {
             const treeGroup = new THREE.Group();
-            
-            const trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 6);
-            const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5c4033 });
-            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 4, 6), new THREE.MeshLambertMaterial({ color: 0x5c4033 }));
             trunk.position.y = 2;
-            treeGroup.add(trunk);
-
-            const leavesGeo = new THREE.ConeGeometry(2.5, 6, 6);
-            const leavesMat = new THREE.MeshLambertMaterial({ color: 0x2e8b57 });
-            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(2.5, 6, 6), new THREE.MeshLambertMaterial({ color: 0x2e8b57 }));
             leaves.position.y = 5;
-            treeGroup.add(leaves);
-
+            treeGroup.add(trunk, leaves);
             treeGroup.position.set(x, 0, z);
             scene.add(treeGroup);
         }
 
-        for (let i = 0; i < 70; i++) {
-            let x = (Math.random() - 0.5) * (MAP_SIZE - 40);
-            let z = (Math.random() - 0.5) * (MAP_SIZE - 40);
+        // Spawn Map POIs
+        createHouse(-40, -40);
+        createHouse(60, 80);
+        createHouse(-80, 100);
+        createTreehouse(30, -70);
+        createTreehouse(-100, -30);
+
+        for (let i = 0; i < 90; i++) {
+            let x = (Math.random() - 0.5) * (MAP_SIZE - 60);
+            let z = (Math.random() - 0.5) * (MAP_SIZE - 60);
             createTree(x, z);
         }
 
         // Battle Bus
         const busGroup = new THREE.Group();
-        const busBody = new THREE.Mesh(
-            new THREE.BoxGeometry(4, 3, 8),
-            new THREE.MeshLambertMaterial({ color: 0x2266cc })
-        );
+        const busBody = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 8), new THREE.MeshLambertMaterial({ color: 0x2266cc }));
         busBody.position.y = 1.5;
-        busGroup.add(busBody);
-
-        const balloon = new THREE.Mesh(
-            new THREE.SphereGeometry(3, 12, 12),
-            new THREE.MeshLambertMaterial({ color: 0xff3333 })
-        );
+        const balloon = new THREE.Mesh(new THREE.SphereGeometry(3, 12, 12), new THREE.MeshLambertMaterial({ color: 0xff3333 }));
         balloon.position.y = 6;
-        busGroup.add(balloon);
-
-        let busActive = true;
-        busGroup.position.set(-180, 80, -180);
+        busGroup.add(busBody, balloon);
+        busGroup.position.set(-200, 90, -200);
         scene.add(busGroup);
+        let busActive = true;
 
-        // Player Controls
-        let inBus = true;
-        let isGrounded = false;
+        // Player Controls & Movement
+        let inBus = true, isGrounded = false;
         let velocity = new THREE.Vector3();
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-        
+
         const player = new THREE.Group();
         scene.add(player);
-        player.position.set(-180, 80, -180);
+        player.position.set(-200, 90, -200);
 
         const pitchObject = new THREE.Object3D();
         pitchObject.add(camera);
@@ -283,26 +431,35 @@
             }
         });
 
+        // Key Commands
         document.addEventListener('keydown', (e) => {
+            // Secret Cheat Menu Trigger: Alt + 7
+            if (e.altKey && (e.key === '7' || e.code === 'Digit7')) {
+                toggleCheatMenu();
+                return;
+            }
+
             switch (e.code) {
                 case 'KeyW': moveForward = true; break;
                 case 'KeyS': moveBackward = true; break;
                 case 'KeyA': moveLeft = true; break;
                 case 'KeyD': moveRight = true; break;
+                case 'Digit1': setMode('WEAPON'); break;
+                case 'Digit2': case 'KeyZ': setMode('BUILD'); setBuildType('WALL'); break;
+                case 'Digit3': case 'KeyX': setMode('BUILD'); setBuildType('FLOOR'); break;
+                case 'Digit4': case 'KeyC': setMode('BUILD'); setBuildType('RAMP'); break;
+                case 'Digit5': case 'KeyV': setMode('BUILD'); setBuildType('ROOF'); break;
+                case 'KeyG': toggleMaterial(); break;
+                case 'KeyE': interactChest(); break;
                 case 'Space': 
                     if (inBus) {
                         inBus = false;
                         player.position.copy(busGroup.position);
                     } else if (isGrounded) {
-                        velocity.y = 12;
+                        velocity.y = superJumpEnabled ? 28 : 12;
                         isGrounded = false;
                     }
                     break;
-                case 'KeyZ': setBuildType('WALL'); break;
-                case 'KeyX': setBuildType('FLOOR'); break;
-                case 'KeyC': setBuildType('RAMP'); break;
-                case 'KeyV': setBuildType('ROOF'); break;
-                case 'KeyG': toggleMaterial(); break;
             }
         });
 
@@ -323,32 +480,50 @@
         document.addEventListener('mousedown', (e) => {
             if (document.pointerLockElement !== document.body) return;
 
-            if (e.button === 0) {
-                placeBuilding();
-            } else if (e.button === 2) {
+            if (e.button === 0) { // Left Click
+                if (currentMode === 'BUILD') {
+                    placeBuilding();
+                } else {
+                    fireLaser();
+                }
+            } else if (e.button === 2) { // Right Click
                 toggleMaterial();
             }
         });
 
         document.addEventListener('contextmenu', e => e.preventDefault());
 
-        // Building Preview & System
-        function createBuildGeometry(type) {
-            if (type === 'WALL') return new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, 0.2);
-            if (type === 'FLOOR') return new THREE.BoxGeometry(GRID_SIZE, 0.2, GRID_SIZE);
-            if (type === 'ROOF') return new THREE.ConeGeometry(GRID_SIZE * 0.7, 2, 4);
-            if (type === 'RAMP') return new THREE.BoxGeometry(GRID_SIZE, 0.2, Math.sqrt(GRID_SIZE*GRID_SIZE*2));
-            return new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, 0.2);
+        function setMode(mode) {
+            currentMode = mode;
+            const indicator = document.getElementById('mode-indicator');
+            if (mode === 'WEAPON') {
+                indicator.innerText = 'WEAPON: LASER GUN';
+                indicator.style.borderColor = '#00ffff';
+                indicator.style.color = '#00ffff';
+                laserGun.visible = true;
+                previewMesh.visible = false;
+                document.querySelectorAll('.build-slot').forEach(el => el.classList.remove('active'));
+            } else {
+                indicator.innerText = `BUILDING: ${currentBuildType}`;
+                indicator.style.borderColor = '#ffcc00';
+                indicator.style.color = '#ffcc00';
+                laserGun.visible = false;
+                previewMesh.visible = true;
+            }
         }
 
-        const previewMat = new THREE.MeshBasicMaterial({
-            color: 0x00aaff,
-            transparent: true,
-            opacity: 0.5,
-            wireframe: true
-        });
+        // --- Building Mechanics with Solid Physics ---
+        function createBuildGeometry(type) {
+            if (type === 'WALL') return new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, 0.3);
+            if (type === 'FLOOR') return new THREE.BoxGeometry(GRID_SIZE, 0.3, GRID_SIZE);
+            if (type === 'ROOF') return new THREE.ConeGeometry(GRID_SIZE * 0.7, 2, 4);
+            if (type === 'RAMP') return new THREE.BoxGeometry(GRID_SIZE, 0.3, Math.sqrt(GRID_SIZE*GRID_SIZE*2));
+            return new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, 0.3);
+        }
 
+        const previewMat = new THREE.MeshBasicMaterial({ color: 0x00aaff, transparent: true, opacity: 0.5, wireframe: true });
         const previewMesh = new THREE.Mesh(createBuildGeometry('WALL'), previewMat);
+        previewMesh.visible = false;
         scene.add(previewMesh);
 
         function setBuildType(type) {
@@ -358,13 +533,14 @@
             
             previewMesh.geometry.dispose();
             previewMesh.geometry = createBuildGeometry(type);
+            setMode('BUILD');
         }
 
         function toggleMaterial() {
             const mats = Object.keys(MATERIALS);
             let idx = (mats.indexOf(currentMaterial) + 1) % mats.length;
             currentMaterial = mats[idx];
-            document.getElementById('material-indicator').innerText = `Material: ${currentMaterial}`;
+            updateHUD();
         }
 
         function getSnapPosition() {
@@ -372,63 +548,129 @@
             camera.getWorldDirection(dir);
             
             const targetPos = player.position.clone().add(dir.multiplyScalar(6));
-            
             let gx = Math.round(targetPos.x / GRID_SIZE) * GRID_SIZE;
             let gy = Math.max(0, Math.round(targetPos.y / GRID_SIZE) * GRID_SIZE);
             let gz = Math.round(targetPos.z / GRID_SIZE) * GRID_SIZE;
 
             let rotY = Math.round(player.rotation.y / (Math.PI / 2)) * (Math.PI / 2);
-
             return { pos: new THREE.Vector3(gx, gy + (currentBuildType === 'FLOOR' ? 0 : GRID_SIZE/2), gz), rotY: rotY };
         }
 
         function updatePreview() {
+            if (currentMode !== 'BUILD') return;
             const snap = getSnapPosition();
             previewMesh.position.copy(snap.pos);
             previewMesh.rotation.y = snap.rotY;
 
-            if (currentBuildType === 'RAMP') {
-                previewMesh.rotation.x = Math.PI / 4;
-            } else {
-                previewMesh.rotation.x = 0;
-            }
+            if (currentBuildType === 'RAMP') previewMesh.rotation.x = Math.PI / 4;
+            else previewMesh.rotation.x = 0;
         }
 
         function placeBuilding() {
+            if (materialsCount[currentMaterial] < 10) return;
+
             const snap = getSnapPosition();
             const matProps = MATERIALS[currentMaterial];
-
             const mat = new THREE.MeshLambertMaterial({ color: matProps.color });
             const mesh = new THREE.Mesh(previewMesh.geometry.clone(), mat);
             mesh.position.copy(snap.pos);
             mesh.rotation.copy(previewMesh.rotation);
 
             scene.add(mesh);
+            
+            // Register collider box so player CANNOT walk through builds
+            const box = new THREE.Box3().setFromObject(mesh);
+            colliders.push(box);
+
+            materialsCount[currentMaterial] -= 10;
+            updateHUD();
         }
 
-        // Bots
+        // --- Laser Gun & Combat Mechanics ---
+        function fireLaser() {
+            // Recoil effect
+            laserGun.position.z = -0.4;
+            setTimeout(() => laserGun.position.z = -0.6, 80);
+
+            // Draw Beam
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            const raycaster = new THREE.Raycaster(camera.getWorldPosition(new THREE.Vector3()), dir);
+
+            const startPos = laserGun.getWorldPosition(new THREE.Vector3());
+            const endPos = startPos.clone().add(dir.multiplyScalar(100));
+
+            const material = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 4 });
+            const geometry = new THREE.BufferGeometry().setFromPoints([startPos, endPos]);
+            const laserLine = new THREE.Line(geometry, material);
+            scene.add(laserLine);
+
+            setTimeout(() => scene.remove(laserLine), 70);
+
+            // Hit Detection on Bots
+            const botMeshes = bots.map(b => b.userData.bodyMesh);
+            const hits = raycaster.intersectObjects(botMeshes);
+
+            if (hits.length > 0) {
+                const botGroup = hits[0].object.parent;
+                botGroup.userData.hp -= 35;
+                
+                // Flash hit color
+                hits[0].object.material.color.setHex(0xffffff);
+                setTimeout(() => hits[0].object.material.color.setHex(0xff2222), 100);
+
+                if (botGroup.userData.hp <= 0) {
+                    scene.remove(botGroup);
+                    bots.splice(bots.indexOf(botGroup), 1);
+                }
+            }
+        }
+
+        // --- Detailed Humanoid Bot Characters ---
         const bots = [];
-        function spawnBot(x, z) {
-            const botGroup = new THREE.Group();
-            const body = new THREE.Mesh(
-                new THREE.BoxGeometry(1, 2, 1),
-                new THREE.MeshLambertMaterial({ color: 0xff4444 })
-            );
-            body.position.y = 1;
-            botGroup.add(body);
+        function createBotCharacter() {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: 0xff2222 });
+            const darkMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
 
-            botGroup.position.set(x, 0, z);
-            botGroup.userData = {
-                target: new THREE.Vector3(x + (Math.random()-0.5)*40, 0, z + (Math.random()-0.5)*40),
-                timer: 0
-            };
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), mat);
+            head.position.y = 1.7;
+            
+            // Torso
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.4), darkMat);
+            torso.position.y = 1.05;
 
-            scene.add(botGroup);
-            bots.push(botGroup);
+            // Arms
+            const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.2), mat);
+            armL.position.set(-0.5, 1.05, 0);
+            const armR = armL.clone();
+            armR.position.x = 0.5;
+
+            // Legs
+            const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.25), mat);
+            legL.position.set(-0.2, 0.35, 0);
+            const legR = legL.clone();
+            legR.position.x = 0.2;
+
+            group.add(head, torso, armL, armR, legL, legR);
+            group.userData.bodyMesh = torso; // target mesh for raycasting
+            return group;
         }
 
-        for (let i = 0; i < 10; i++) {
-            spawnBot((Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+        function spawnBot(x, z) {
+            const bot = createBotCharacter();
+            bot.position.set(x, 0, z);
+            bot.userData.hp = 100;
+            bot.userData.target = new THREE.Vector3(x + (Math.random()-0.5)*50, 0, z + (Math.random()-0.5)*50);
+            bot.userData.timer = 0;
+
+            scene.add(bot);
+            bots.push(bot);
+        }
+
+        for (let i = 0; i < 12; i++) {
+            spawnBot((Math.random() - 0.5) * 220, (Math.random() - 0.5) * 220);
         }
 
         function updateBots(delta) {
@@ -436,9 +678,9 @@
                 bot.userData.timer += delta;
                 if (bot.userData.timer > 4) {
                     bot.userData.target.set(
-                        bot.position.x + (Math.random() - 0.5) * 40,
+                        bot.position.x + (Math.random() - 0.5) * 50,
                         0,
-                        bot.position.z + (Math.random() - 0.5) * 40
+                        bot.position.z + (Math.random() - 0.5) * 50
                     );
                     bot.userData.timer = 0;
                 }
@@ -447,42 +689,127 @@
                 dir.y = 0;
                 if (dir.length() > 1) {
                     dir.normalize();
-                    bot.position.add(dir.multiplyScalar(4 * delta));
+                    bot.position.add(dir.multiplyScalar(4.5 * delta));
                     bot.lookAt(bot.userData.target.x, bot.position.y, bot.userData.target.z);
                 }
             });
         }
 
-        // Main Loop
+        // --- Chest Interactions ---
+        function interactChest() {
+            chests.forEach(chest => {
+                if (!chest.userData.opened && player.position.distanceTo(chest.position) < 4) {
+                    chest.userData.opened = true;
+                    chest.children[0].material.color.setHex(0x555555); // darken opened chest
+                    
+                    playerShield = Math.min(100, playerShield + 50);
+                    materialsCount.WOOD += 300;
+                    materialsCount.BRICK += 200;
+                    materialsCount.METAL += 100;
+                    updateHUD();
+                }
+            });
+        }
+
+        function checkChestProximity() {
+            let near = false;
+            chests.forEach(chest => {
+                if (!chest.userData.opened && player.position.distanceTo(chest.position) < 4) near = true;
+            });
+            document.getElementById('interact-prompt').style.display = near ? 'block' : 'none';
+        }
+
+        function updateHUD() {
+            document.getElementById('mat-wood').innerText = materialsCount.WOOD;
+            document.getElementById('mat-brick').innerText = materialsCount.BRICK;
+            document.getElementById('mat-metal').innerText = materialsCount.METAL;
+            document.getElementById('hp').innerText = playerHP;
+            document.getElementById('shield').innerText = playerShield;
+        }
+
+        // --- Secret Cheat Menu Logic ---
+        function toggleCheatMenu() {
+            const menu = document.getElementById('cheat-menu');
+            if (menu.style.display === 'flex') {
+                menu.style.display = 'none';
+                document.body.requestPointerLock();
+            } else {
+                menu.style.display = 'flex';
+                document.exitPointerLock();
+            }
+        }
+
+        function cheatInfiniteMats() {
+            materialsCount.WOOD = 1000000;
+            materialsCount.BRICK = 1000000;
+            materialsCount.METAL = 1000000;
+            updateHUD();
+        }
+
+        function cheatToggleSuperJump() {
+            superJumpEnabled = !superJumpEnabled;
+            document.getElementById('superjump-btn').innerText = `SUPER JUMP: ${superJumpEnabled ? 'ON' : 'OFF'}`;
+        }
+
+        function cheatGodMode() {
+            playerHP = 9999;
+            playerShield = 9999;
+            updateHUD();
+        }
+
+        // --- Solid Physics & Collision Engine ---
+        function checkCollisions(newPos) {
+            const playerBox = new THREE.Box3().setFromCenterAndSize(
+                newPos.clone().add(new THREE.Vector3(0, 0.9, 0)),
+                new THREE.Vector3(0.8, 1.8, 0.8)
+            );
+
+            for (let collider of colliders) {
+                if (playerBox.intersectsBox(collider)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // --- Main Game Loop ---
         const clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
-            const delta = clock.getDelta();
+            const delta = Math.min(clock.getDelta(), 0.1);
 
+            // Bus movement
             if (busActive) {
-                busGroup.position.x += 20 * delta;
-                busGroup.position.z += 20 * delta;
-                if (inBus) {
-                    player.position.copy(busGroup.position);
-                }
-                if (busGroup.position.x > 200) busActive = false;
+                busGroup.position.x += 22 * delta;
+                busGroup.position.z += 22 * delta;
+                if (inBus) player.position.copy(busGroup.position);
+                if (busGroup.position.x > 220) busActive = false;
             }
 
+            // Player Physics & Movement
             if (!inBus) {
                 if (player.position.y > 0) {
                     velocity.y -= (player.position.y > 20 ? 15 : 35) * delta;
                 }
 
-                player.position.y += velocity.y * delta;
+                const nextY = player.position.y + velocity.y * delta;
+                const nextPos = player.position.clone();
+                nextPos.y = nextY;
 
-                if (player.position.y <= 0) {
+                if (nextY <= 0) {
                     player.position.y = 0;
+                    velocity.y = 0;
+                    isGrounded = true;
+                } else if (!checkCollisions(nextPos)) {
+                    player.position.y = nextY;
+                } else {
                     velocity.y = 0;
                     isGrounded = true;
                 }
 
-                const moveSpeed = 12;
+                // Horizontal Axis Movement
+                const moveSpeed = 13;
                 const moveDir = new THREE.Vector3();
 
                 if (moveForward) moveDir.z -= 1;
@@ -490,17 +817,26 @@
                 if (moveLeft) moveDir.x -= 1;
                 if (moveRight) moveDir.x += 1;
 
-                moveDir.normalize();
-                moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+                if (moveDir.length() > 0) {
+                    moveDir.normalize();
+                    moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
 
-                player.position.x += moveDir.x * moveSpeed * delta;
-                player.position.z += moveDir.z * moveSpeed * delta;
+                    // Try moving X
+                    const testX = player.position.clone();
+                    testX.x += moveDir.x * moveSpeed * delta;
+                    if (!checkCollisions(testX)) player.position.x = testX.x;
+
+                    // Try moving Z
+                    const testZ = player.position.clone();
+                    testZ.z += moveDir.z * moveSpeed * delta;
+                    if (!checkCollisions(testZ)) player.position.z = testZ.z;
+                }
 
                 updatePreview();
+                checkChestProximity();
             }
 
             updateBots(delta);
-
             renderer.render(scene, camera);
         }
 
