@@ -27,6 +27,7 @@
             height: 10px;
             transform: translate(-50%, -50%);
             pointer-events: none;
+            z-index: 10;
         }
         #crosshair::before, #crosshair::after {
             content: '';
@@ -47,6 +48,7 @@
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             pointer-events: none;
+            z-index: 10;
         }
 
         .hud-panel {
@@ -64,6 +66,7 @@
             display: flex;
             gap: 10px;
             pointer-events: none;
+            z-index: 10;
         }
 
         .build-slot {
@@ -103,6 +106,7 @@
             border-radius: 12px;
             border: 2px solid #555;
             cursor: pointer;
+            z-index: 100;
         }
 
         #material-indicator {
@@ -115,6 +119,7 @@
             background: rgba(0,0,0,0.6);
             padding: 8px 16px;
             border-radius: 6px;
+            z-index: 10;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -125,7 +130,7 @@
     
     <div id="instructions">
         <h1>FORTNITE WEB EDITION</h1>
-        <p>Click anywhere to Start</p>
+        <p><b>Click anywhere to Start</b></p>
         <p><b>WASD</b> - Move | <b>SPACE</b> - Jump / Jump from Bus</p>
         <p><b>Z</b> - Wall | <b>X</b> - Floor | <b>C</b> - Ramp | <b>V</b> - Roof</p>
         <p><b>G / Right Click</b> - Switch Material (Wood / Brick / Metal)</p>
@@ -176,7 +181,7 @@
         };
 
         let currentMaterial = 'WOOD';
-        let currentBuildType = 'WALL'; // WALL, FLOOR, RAMP, ROOF
+        let currentBuildType = 'WALL';
 
         // --- Three.js Setup ---
         const scene = new THREE.Scene();
@@ -216,12 +221,10 @@
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // --- Environment Details (Trees) ---
-        const trees = [];
+        // --- Trees ---
         function createTree(x, z) {
             const treeGroup = new THREE.Group();
             
-            // Trunk
             const trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 8);
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
             const trunk = new THREE.Mesh(trunkGeo, trunkMat);
@@ -229,7 +232,6 @@
             trunk.castShadow = true;
             treeGroup.add(trunk);
 
-            // Foliage
             const leavesGeo = new THREE.ConeGeometry(2.5, 6, 8);
             const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.6 });
             const leaves = new THREE.Mesh(leavesGeo, leavesMat);
@@ -239,7 +241,6 @@
 
             treeGroup.position.set(x, 0, z);
             scene.add(treeGroup);
-            trees.push(treeGroup);
         }
 
         for (let i = 0; i < 80; i++) {
@@ -268,7 +269,7 @@
         busGroup.position.set(-180, 80, -180);
         scene.add(busGroup);
 
-        // --- Player Controls & State ---
+        // --- Player ---
         let inBus = true;
         let isGrounded = false;
         let velocity = new THREE.Vector3();
@@ -276,15 +277,13 @@
         
         const player = new THREE.Group();
         scene.add(player);
-        player.position.set(-180, 80, -180); // Start inside bus
+        player.position.set(-180, 80, -180);
 
-        // Camera Setup inside player
         const pitchObject = new THREE.Object3D();
         pitchObject.add(camera);
-        camera.position.set(0, 1.6, 0); // Eye height
+        camera.position.set(0, 1.6, 0);
         player.add(pitchObject);
 
-        // Mouse Look
         let yaw = 0, pitch = 0;
         document.addEventListener('mousemove', (e) => {
             if (document.pointerLockElement === document.body) {
@@ -297,7 +296,6 @@
             }
         });
 
-        // Key Listeners
         document.addEventListener('keydown', (e) => {
             switch (e.code) {
                 case 'KeyW': moveForward = true; break;
@@ -337,9 +335,9 @@
                 return;
             }
 
-            if (e.button === 0) { // Left Click - Build
+            if (e.button === 0) {
                 placeBuilding();
-            } else if (e.button === 2) { // Right Click - Switch Material
+            } else if (e.button === 2) {
                 toggleMaterial();
             }
         });
@@ -347,29 +345,21 @@
         document.addEventListener('contextmenu', e => e.preventDefault());
 
         // --- Building Mechanics ---
-        const builds = [];
-        let previewMesh;
-
         function createBuildGeometry(type) {
             if (type === 'WALL') return new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, 0.2);
             if (type === 'FLOOR') return new THREE.BoxGeometry(GRID_SIZE, 0.2, GRID_SIZE);
             if (type === 'ROOF') return new THREE.ConeGeometry(GRID_SIZE * 0.7, 2, 4);
-            if (type === 'RAMP') {
-                const geo = new THREE.BoxGeometry(GRID_SIZE, 0.2, Math.sqrt(GRID_SIZE*GRID_SIZE*2));
-                return geo;
-            }
+            if (type === 'RAMP') return new THREE.BoxGeometry(GRID_SIZE, 0.2, Math.sqrt(GRID_SIZE*GRID_SIZE*2));
             return new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, 0.2);
         }
 
-        // Preview Build Hologram
         const previewMat = new THREE.MeshBasicMaterial({
             color: 0x00aaff,
             transparent: true,
-            opacity: 0.4,
-            wireframe: false
+            opacity: 0.4
         });
 
-        previewMesh = new THREE.Mesh(createBuildGeometry('WALL'), previewMat);
+        const previewMesh = new THREE.Mesh(createBuildGeometry('WALL'), previewMat);
         scene.add(previewMesh);
 
         function setBuildType(type) {
@@ -394,7 +384,6 @@
             
             const targetPos = player.position.clone().add(dir.multiplyScalar(6));
             
-            // Snap to grid
             let gx = Math.round(targetPos.x / GRID_SIZE) * GRID_SIZE;
             let gy = Math.max(0, Math.round(targetPos.y / GRID_SIZE) * GRID_SIZE);
             let gz = Math.round(targetPos.z / GRID_SIZE) * GRID_SIZE;
@@ -434,19 +423,19 @@
             mesh.receiveShadow = true;
 
             scene.add(mesh);
-            builds.push(mesh);
         }
 
-        // --- AI Bots ---
+        // --- Bots ---
         const bots = [];
         function spawnBot(x, z) {
             const botGroup = new THREE.Group();
             
+            // Fixed Cylinder geometry for bots to prevent errors
             const body = new THREE.Mesh(
-                new THREE.CapsuleGeometry(0.6, 1.8, 4, 8),
+                new THREE.CylinderGeometry(0.6, 0.6, 1.8, 16),
                 new THREE.MeshStandardMaterial({ color: 0xff4444 })
             );
-            body.position.y = 1.2;
+            body.position.y = 0.9;
             body.castShadow = true;
             botGroup.add(body);
 
@@ -486,14 +475,13 @@
             });
         }
 
-        // --- Main Game Loop ---
+        // --- Game Loop ---
         const clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            // Battle Bus Flying Logic
             if (busActive) {
                 busGroup.position.x += 25 * delta;
                 busGroup.position.z += 25 * delta;
@@ -503,11 +491,9 @@
                 if (busGroup.position.x > 200) busActive = false;
             }
 
-            // Player Physics & Movement
             if (!inBus) {
-                // Gravity & Skydiving logic
                 if (player.position.y > 0) {
-                    velocity.y -= (player.position.y > 20 ? 15 : 30) * delta; // Parachute friction high up
+                    velocity.y -= (player.position.y > 20 ? 15 : 30) * delta;
                 }
 
                 player.position.y += velocity.y * delta;
@@ -518,7 +504,6 @@
                     isGrounded = true;
                 }
 
-                // Horizontal Movement
                 const moveSpeed = 12;
                 const moveDir = new THREE.Vector3();
 
@@ -541,7 +526,6 @@
             renderer.render(scene, camera);
         }
 
-        // Resize Listener
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
